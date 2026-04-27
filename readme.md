@@ -1,4 +1,4 @@
-# 🚀 AI Job Matching System
+#  AI Job Matching System
 
 This project is an end-to-end backend system designed to match job descriptions intelligently using a combination of Large Language Models (LLMs) and semantic embeddings.
 
@@ -6,7 +6,7 @@ Instead of relying on simple keyword matching, the system understands the *meani
 
 ---
 
-## 📌 Problem Statement
+## Problem Statement
 
 Traditional job matching systems depend heavily on keyword overlap. While simple, this approach often fails to capture the actual intent behind a role.
 
@@ -16,7 +16,7 @@ The core challenge is transforming messy, unstructured job descriptions into som
 
 ---
 
-## 💡 Solution
+## Solution
 
 This system addresses the problem by combining three key ideas:
 
@@ -28,7 +28,7 @@ By blending structured understanding with semantic similarity, the system produc
 
 ---
 
-## ⚙️ System Architecture
+## System Architecture
 
 The overall flow of the system is designed as a pipeline:
 
@@ -48,7 +48,7 @@ Each stage transforms the data into a more refined and usable representation.
 
 ---
 
-## 🔄 Pipeline Overview
+## Pipeline Overview
 
 ### 1. Data Ingestion
 
@@ -148,7 +148,7 @@ Returns the most similar jobs for a given job ID.
 
 ---
 
-## 🧠 Key Design Decisions
+## Key Design Decisions
 
 * **Hybrid Approach (Structured + Semantic)**
   Instead of embedding raw text directly, the system enriches input using LLM-extracted features to improve representation quality.
@@ -161,7 +161,7 @@ Returns the most similar jobs for a given job ID.
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 * Python, FastAPI
 * MySQL
@@ -171,7 +171,7 @@ Returns the most similar jobs for a given job ID.
 
 ---
 
-## 🚀 Setup Instructions
+## Setup Instructions
 
 ```
 pip install -r requirements.txt
@@ -189,7 +189,7 @@ uvicorn main:app --reload
 
 ---
 
-## 🎯 Key Takeaways
+## Key Takeaways
 
 * Combines LLM-based understanding with vector similarity
 * Handles noisy, real-world job data effectively
