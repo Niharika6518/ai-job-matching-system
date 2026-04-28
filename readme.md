@@ -1,118 +1,172 @@
-#  AI Job Matching System
+# AI Job Matching System
 
-This project is an end-to-end backend system designed to match job descriptions intelligently using a combination of Large Language Models (LLMs) and semantic embeddings.
+An end-to-end backend system that intelligently matches job descriptions using a combination of **LLM-based understanding** and **semantic similarity**.
 
-Instead of relying on simple keyword matching, the system understands the *meaning* of job descriptions by converting unstructured data into structured insights and vector representations. This allows it to identify genuinely similar roles even when the wording differs significantly.
-
----
-
-## Problem Statement
-
-Traditional job matching systems depend heavily on keyword overlap. While simple, this approach often fails to capture the actual intent behind a role.
-
-For instance, roles like *Software Engineer* and *Backend Developer* may require nearly identical skills but can be missed due to different wording. Similarly, *Machine Learning Engineer* and *Data Scientist* often overlap in responsibilities but are not matched effectively using keyword-based methods.
-
-The core challenge is transforming messy, unstructured job descriptions into something that can be compared meaningfully.
+Unlike traditional keyword-based systems, this solution captures the **true meaning of roles**, enabling accurate matching even when job descriptions are worded differently.
 
 ---
 
-## Solution
+# Why this exists
 
-This system addresses the problem by combining three key ideas:
+Most job matching systems rely on **keyword overlap**.
 
-* **LLM-based structuring** to extract meaningful information such as role, skills, and responsibilities
-* **Embedding-based similarity** to capture semantic relationships between jobs
-* **Heuristic refinement** to improve match quality using domain logic like skill overlap and role alignment
+That breaks in real scenarios:
 
-By blending structured understanding with semantic similarity, the system produces more accurate and reliable job matches.
+* *“Software Engineer” vs “Backend Developer”*
+* *“Machine Learning Engineer” vs “Data Scientist”*
+
+Same intent, different wording → poor matches
+
+The real challenge is:
+
+> Converting messy, unstructured job descriptions into something that can be compared meaningfully.
 
 ---
 
-## System Architecture
+# What this system does differently
 
-The overall flow of the system is designed as a pipeline:
+This system combines three layers:
 
+### 1. LLM-based understanding
+
+Extracts structured meaning from raw job descriptions
+
+### 2. Semantic embeddings
+
+Captures contextual similarity between roles
+
+### 3. Heuristic refinement
+
+Improves match quality using domain logic (skills + role alignment)
+
+Result: **More accurate and meaningful job matches**
+
+---
+
+# System Architecture
+
+```text
+Raw Job Data (DB)
+        ↓
+Cleaning & Normalization
+        ↓
+LLM Intent Extraction
+        ↓
+Embedding Generation
+        ↓
+Similarity Matching API
 ```
-Raw Job Data (Database)
-        ↓
-Data Cleaning & Normalization
-        ↓
-LLM-Based Intent Extraction
-        ↓
-Embedding Generation (Sentence Transformers)
-        ↓
-Similarity Matching API (Cosine Similarity + Heuristics)
-```
 
-Each stage transforms the data into a more refined and usable representation.
+Each stage improves the quality and structure of the data.
 
 ---
 
-## Pipeline Overview
+# Pipeline Breakdown
 
-### 1. Data Ingestion
+## 1. Data Ingestion
 
-The system begins by fetching raw job data from a source database. This includes fields such as job title, description, and skills. Only active (non-deleted) jobs are processed, and the system supports incremental processing using specific job IDs instead of reprocessing the entire dataset.
-
----
-
-### 2. Data Cleaning & Semantic Preparation
-
-Raw job descriptions often contain HTML, repeated phrases, and irrelevant content. This stage removes noise, filters weak or generic sentences, and constructs a clean, meaningful representation called `semantic_text`. This improves the quality of downstream processing.
+* Fetches raw job data (title, description, skills)
+* Supports **incremental processing** using job IDs
 
 ---
 
-### 3. Intent Extraction (LLM)
+## 2. Data Cleaning & Semantic Preparation
 
-Using AWS Bedrock, the system extracts structured information from the cleaned text. This includes:
+* Removes HTML and noise
+* Filters generic/low-signal content
+* Produces `semantic_text`
+
+Improves downstream model performance
+
+---
+
+## 3. Intent Extraction (LLM)
+
+Using AWS Bedrock, the system extracts:
 
 * Role summary
 * Core role
-* Seniority level
-* Must-have and secondary skills
+* Seniority
+* Must-have & secondary skills
 * Responsibilities
-* Tools and technologies
-* Overall job intent
+* Tools
+* Job intent
 
-This step converts unstructured text into a structured format that is easier to reason about and compare.
+Converts unstructured text → structured understanding
 
 ---
 
-### 4. Embedding Generation
+## 4. Embedding Generation
 
-The system combines multiple signals — including semantic text, skills, role, and intent — into a single representation. This enriched text is then converted into a vector using:
+Combines multiple signals:
 
-```
+* semantic_text
+* skills
+* tools
+* role
+* intent
+
+Then generates embeddings using:
+
+```text
 sentence-transformers/all-MiniLM-L6-v2
 ```
 
-These embeddings capture the semantic meaning of each job.
+Produces rich semantic vectors
 
 ---
 
-### 5. Matching Logic
+## 5. Matching Logic
 
-At query time, the system computes similarity between jobs using cosine similarity on embeddings. It then refines the score using additional logic:
+* Computes **cosine similarity**
+* Applies domain-aware adjustments:
 
-* Penalizes mismatched or weak skill overlap
-* Adjusts scores when core roles differ
+### Skill-based adjustment
 
-The final results are ranked and labeled as:
+* No overlap → penalized
+* Weak overlap → reduced score
 
-* High Match
-* Good Match
-* Average Match
-* Low Match
+### ✔ Role-based adjustment
+
+* Different core roles → score reduced
 
 ---
 
-## 📡 API Endpoints
+### 📊 Match Labels
 
-### 🔹 Process Jobs
+* **90+** → High Match
+* **85–90** → Good Match
+* **75–85** → Average Match
+* **<75** → Low Match
 
-**POST /process-jobs**
+---
 
-Processes selected jobs through the full pipeline (cleaning → intent extraction → embedding generation).
+#  Async Processing (Scalable Design)
+
+To handle large workloads efficiently, the system uses **background task processing**:
+
+### Flow:
+
+```text
+POST /start-processing → create task
+        ↓
+Worker picks task → processes in batches
+        ↓
+GET /task-status → track progress
+```
+
+Prevents API timeouts
+Handles thousands of jobs reliably
+
+---
+
+# 📡 API Endpoints
+
+## 🔹 Start Processing (Async)
+
+```http
+POST /start-processing
+```
 
 **Request:**
 
@@ -122,13 +176,41 @@ Processes selected jobs through the full pipeline (cleaning → intent extractio
 }
 ```
 
+**Response:**
+
+```json
+{
+  "task_id": "abc-123",
+  "status": "queued"
+}
+```
+
 ---
 
-### 🔹 Get Matches
+## 🔹 Task Status
 
-**GET /matches/{job_id}**
+```http
+GET /task-status/{task_id}
+```
 
-Returns the most similar jobs for a given job ID.
+**Response:**
+
+```json
+{
+  "status": "processing",
+  "processed": 50,
+  "total": 200,
+  "progress": 25.0
+}
+```
+
+---
+
+## 🔹 Get Matches
+
+```http
+GET /matches/{job_id}
+```
 
 **Response:**
 
@@ -148,53 +230,68 @@ Returns the most similar jobs for a given job ID.
 
 ---
 
-## Key Design Decisions
+## 🔹 (Legacy) Direct Processing
 
-* **Hybrid Approach (Structured + Semantic)**
-  Instead of embedding raw text directly, the system enriches input using LLM-extracted features to improve representation quality.
-
-* **Dynamic Matching**
-  Similarity is computed at runtime rather than precomputed, allowing flexibility and real-time updates.
-
-* **Incremental Processing**
-  Jobs are processed selectively using job IDs, avoiding redundant computation and improving efficiency.
-
----
-
-## Tech Stack
-
-* Python, FastAPI
-* MySQL
-* Sentence Transformers
-* AWS Bedrock (LLM)
-* NumPy, scikit-learn
-
----
-
-## Setup Instructions
-
+```http
+POST /process-jobs
 ```
+
+Synchronous — use only for small batches/testing
+
+---
+
+# Tech Stack
+
+* **Backend:** FastAPI
+* **Database:** MySQL
+* **LLM:** AWS Bedrock
+* **Embeddings:** Sentence Transformers
+* **ML Tools:** NumPy, scikit-learn
+
+---
+
+# 🛠 Setup
+
+```bash
 pip install -r requirements.txt
 uvicorn main:app --reload
+python worker.py
 ```
 
 ---
 
-## 📈 Future Improvements
+#  Key Design Decisions
 
-* Replace brute-force comparison with vector indexing (e.g., FAISS)
-* Learn similarity weights instead of using fixed heuristics
-* Add caching for frequently requested matches
-* Improve LLM robustness with retry and fallback mechanisms
+### Hybrid Intelligence (LLM + Embeddings)
 
----
-
-## Key Takeaways
-
-* Combines LLM-based understanding with vector similarity
-* Handles noisy, real-world job data effectively
-* Designed with incremental and scalable processing in mind
-* Demonstrates applied AI system design beyond basic implementations
+Instead of raw text embeddings, the system enriches input with structured signals → better semantic representation.
 
 ---
 
+### Dynamic Matching
+
+Similarity is computed at runtime → flexible and up-to-date results.
+
+---
+
+### Incremental Processing
+
+Processes only required job IDs → avoids redundant computation.
+
+---
+
+### Async Architecture
+
+Decouples API from processing → scalable and production-ready.
+
+---
+
+#  Future Improvements
+
+* Replace brute-force matching with **FAISS / vector DB**
+* Introduce **learned scoring instead of fixed heuristics**
+* Add **LLM caching & batching**
+* Improve **explainability (why jobs matched)**
+* Parallelize worker for faster processing
+
+Just tell me 👍
