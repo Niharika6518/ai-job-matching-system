@@ -126,13 +126,13 @@ Produces rich semantic vectors
 * No overlap → penalized
 * Weak overlap → reduced score
 
-### ✔ Role-based adjustment
+### Role-based adjustment
 
 * Different core roles → score reduced
 
 ---
 
-### 📊 Match Labels
+### Match Labels
 
 * **90+** → High Match
 * **85–90** → Good Match
@@ -294,4 +294,3 @@ Decouples API from processing → scalable and production-ready.
 * Improve **explainability (why jobs matched)**
 * Parallelize worker for faster processing
 
-Just tell me 👍
