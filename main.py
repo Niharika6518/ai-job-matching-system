@@ -1,16 +1,27 @@
-
 from fastapi import FastAPI
 from db import get_local_connection, get_source_connection
 from build_job_embeddings import build_embeddings
 from job_processed import process_jobs
 from build_job_intent import build_intent
-
+from task_manager import create_task, get_task
 import json
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
 app = FastAPI()
+@app.post("/start-processing")
+def start_processing(payload: dict):
+    job_ids = payload.get("job_ids", [])
 
+    if not job_ids:
+        return {"status": "error", "message": "No job_ids provided"}
+
+    task_id = create_task(job_ids)
+
+    return {
+        "task_id": task_id,
+        "status": "queued"
+    }
 
 @app.post("/process-jobs")
 def process_pipeline(payload: dict):
@@ -84,7 +95,24 @@ def process_pipeline(payload: dict):
         "message": "Processing completed",
         "results": results
     }
+@app.get("/task-status/{task_id}")
+def task_status(task_id: str):
+    task = get_task(task_id)
 
+    if not task:
+        return {"status": "error", "message": "Task not found"}
+
+    progress = 0
+    if task["total_jobs"] > 0:
+        progress = (task["processed_jobs"] / task["total_jobs"]) * 100
+
+    return {
+        "task_id": task_id,
+        "status": task["status"],
+        "processed": task["processed_jobs"],
+        "total": task["total_jobs"],
+        "progress": round(progress, 2)
+    }
 
 @app.get("/matches/{job_id}")
 def get_matches(job_id: int):
